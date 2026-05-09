@@ -4,8 +4,8 @@ from typing import List, Optional, Tuple
 import rclpy
 from rclpy.node import Node
 
+from geometry_msgs.msg import PoseArray, Twist, Vector3Stamped
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist, PoseArray
 
 
 def clamp(value: float, low: float, high: float) -> float:
@@ -54,6 +54,8 @@ class BoatControllerNode(Node):
         self.declare_parameter("odom_topic", "/odometry/filtered")
         self.declare_parameter("waypoints_topic", "/mission/waypoints")
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("disturbance_topic", "/disturbance/current")
+        self.declare_parameter("use_disturbance_feedforward", False)
 
         # outer position PI gains
         self.declare_parameter("kp_pos", 0.6)
@@ -77,6 +79,7 @@ class BoatControllerNode(Node):
         # waypoint logic
         self.declare_parameter("goal_tolerance", 0.4)
         self.declare_parameter("slowdown_radius", 2.0)
+        self.declare_parameter("hold_final_waypoint", True)
 
         # anti-windup limits
         self.declare_parameter("integral_pos_max", 5.0)
@@ -90,6 +93,7 @@ class BoatControllerNode(Node):
         odom_topic = self.get_parameter("odom_topic").value
         waypoints_topic = self.get_parameter("waypoints_topic").value
         cmd_vel_topic = self.get_parameter("cmd_vel_topic").value
+        disturbance_topic = self.get_parameter("disturbance_topic").value
 
         self.odom_sub = self.create_subscription(
             Odometry,
@@ -102,6 +106,13 @@ class BoatControllerNode(Node):
             PoseArray,
             waypoints_topic,
             self.waypoints_callback,
+            10,
+        )
+
+        self.disturbance_sub = self.create_subscription(
+            Vector3Stamped,
+            disturbance_topic,
+            self.disturbance_callback,
             10,
         )
 
@@ -120,22 +131,27 @@ class BoatControllerNode(Node):
         self.psi = 0.0
         self.u = 0.0
         self.r = 0.0
+        self.current_vx_hat = self.get_parameter("current_vx_hat").value
+        self.current_vy_hat = self.get_parameter("current_vy_hat").value
 
         # waypoints
         self.waypoints: List[Tuple[float, float]] = []
         self.current_wp_idx = 0
+        self.final_goal_announced = False
 
         # integrators
         self.int_ex = 0.0
         self.int_ey = 0.0
         self.int_eu = 0.0
         self.int_epsi = 0.0
+        self.final_goal_announced = False
 
         self.prev_time = self.get_clock().now()
 
         self.get_logger().info("Boat controller started.")
         self.get_logger().info(f"Subscribing odom: {odom_topic}")
         self.get_logger().info(f"Subscribing waypoints: {waypoints_topic}")
+        self.get_logger().info(f"Subscribing disturbance: {disturbance_topic}")
         self.get_logger().info(f"Publishing cmd_vel: {cmd_vel_topic}")
 
     def odom_callback(self, msg: Odometry):
@@ -148,6 +164,13 @@ class BoatControllerNode(Node):
         self.r = msg.twist.twist.angular.z
 
         self.has_odom = True
+
+    def disturbance_callback(self, msg: Vector3Stamped):
+        if not self.get_parameter("use_disturbance_feedforward").value:
+            return
+
+        self.current_vx_hat = msg.vector.x
+        self.current_vy_hat = msg.vector.y
 
     def waypoints_callback(self, msg: PoseArray):
         new_waypoints = [
@@ -180,12 +203,20 @@ class BoatControllerNode(Node):
 
     def switch_waypoint_if_needed(self, dist: float):
         goal_tolerance = self.get_parameter("goal_tolerance").value
+        hold_final_waypoint = self.get_parameter("hold_final_waypoint").value
 
         if dist < goal_tolerance:
+            if self.current_wp_idx == len(self.waypoints) - 1 and hold_final_waypoint:
+                if not self.final_goal_announced:
+                    self.get_logger().info("Final waypoint reached. Holding position.")
+                    self.final_goal_announced = True
+                return
+
             self.get_logger().info(
                 f"Waypoint {self.current_wp_idx + 1}/{len(self.waypoints)} reached."
             )
             self.current_wp_idx += 1
+            self.final_goal_announced = False
 
             # reset position integrators after switching goal
             self.int_ex = 0.0
@@ -249,8 +280,8 @@ class BoatControllerNode(Node):
         self.int_ex = clamp(self.int_ex, -integral_pos_max, integral_pos_max)
         self.int_ey = clamp(self.int_ey, -integral_pos_max, integral_pos_max)
 
-        current_vx_hat = self.get_parameter("current_vx_hat").value
-        current_vy_hat = self.get_parameter("current_vy_hat").value
+        current_vx_hat = self.current_vx_hat
+        current_vy_hat = self.current_vy_hat
 
         qx = kp_pos * ex + ki_pos * self.int_ex - current_vx_hat
         qy = kp_pos * ey + ki_pos * self.int_ey - current_vy_hat
@@ -307,7 +338,7 @@ class BoatControllerNode(Node):
         cmd_linear_max = self.get_parameter("cmd_linear_max").value
         cmd_angular_max = self.get_parameter("cmd_angular_max").value
 
-        cmd_linear = clamp(cmd_linear, -cmd_linear_max, cmd_linear_max)
+        cmd_linear = clamp(cmd_linear, 0.0, cmd_linear_max)
         cmd_angular = clamp(cmd_angular, -cmd_angular_max, cmd_angular_max)
 
         # ---------------------------------------------------------

@@ -26,6 +26,7 @@ setup(
             "boat_controller = boat_control.boat_controller_node:main",
             "waypoint_publisher = boat_control.waypoint_publisher_node:main",
             "disturbance_generator = boat_control.disturbance_generator_node:main",
+            "disturbance_applier = boat_control.disturbance_applier_node:main",
         ],
     },
 )
