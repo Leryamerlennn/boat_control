@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<robot name="simple_boat">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.25" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="0.6"/>
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0.16" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.8 0.4 0.16"/>
+      </geometry>
+      <material name="HullBlue">
+        <color rgba="0.1 0.4 0.8 1.0"/>
+      </material>
+    </visual>
+
+    <visual>
+      <origin xyz="0.34 0 0.24" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.12 0.08 0.08"/>
+      </geometry>
+      <material name="BowMarker">
+        <color rgba="0.95 0.95 0.95 1.0"/>
+      </material>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0.16" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.8 0.4 0.16"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="left_wheel">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.002" ixy="0.0" ixz="0.0" iyy="0.002" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.04"/>
+      </geometry>
+      <material name="WheelBlack">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.04"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="right_wheel">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.002" ixy="0.0" ixz="0.0" iyy="0.002" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.04"/>
+      </geometry>
+      <material name="WheelBlack"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.04"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <origin xyz="0 0.24 0.08" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <origin xyz="0 -0.24 0.08" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <gazebo reference="left_wheel">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo reference="right_wheel">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="simple_boat_diff_drive" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+      <update_rate>50</update_rate>
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.48</wheel_separation>
+      <wheel_diameter>0.16</wheel_diameter>
+      <max_wheel_torque>20.0</max_wheel_torque>
+      <max_wheel_acceleration>6.0</max_wheel_acceleration>
+      <command_topic>cmd_vel</command_topic>
+      <odometry_topic>odom</odometry_topic>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+    </plugin>
+  </gazebo>
+</robot>
