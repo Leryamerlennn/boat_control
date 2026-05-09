@@ -151,6 +151,84 @@ Check disturbance:
 timeout 3 ros2 topic echo /disturbance/current
 ```
 
+## Metrics and Plots
+
+The current workflow is:
+- launch the simulation
+- topic data is written to CSV automatically during the run
+- after the run, read the CSV files and generate metrics plus plots
+
+### 1. Build
+
+```bash
+cd ~/ros2_ws
+colcon build --packages-select boat_control
+source /opt/ros/$ROS_DISTRO/setup.bash
+source ~/ros2_ws/install/setup.bash
+```
+
+### 2. Launch with CSV logging
+
+By default, `sim_boat_controller.launch.py` starts a metrics logger node and writes CSV files under:
+
+```text
+~/ros2_ws/src/boat_control/metrics_runs
+```
+
+Example:
+
+```bash
+ros2 launch boat_control sim_boat_controller.launch.py
+```
+
+Or with disturbance:
+
+```bash
+ros2 launch boat_control sim_boat_controller.launch.py enable_disturbance:=true use_disturbance_feedforward:=true
+```
+
+You can choose another directory:
+
+```bash
+ros2 launch boat_control sim_boat_controller.launch.py metrics_output_dir:=/tmp/my_metrics
+```
+
+The logger creates a timestamped run directory such as:
+
+```text
+~/ros2_ws/src/boat_control/metrics_runs/run_metrics
+```
+
+### 3. Generate metrics and graphics from CSV
+
+```bash
+ros2 run boat_control metrics_report ~/ros2_ws/src/boat_control/metrics_runs/run_metrics
+```
+
+This creates:
+- `metrics_summary.json`
+- `metrics_overview.png`
+- `angular_oscillation.png`
+
+inside:
+
+```text
+~/ros2_ws/src/boat_control/metrics_runs/run_metrics/analysis
+```
+
+### Computed metrics
+
+The analyzer currently reports:
+- trajectory RMSE to the planned path polyline
+- trajectory MAE and max path error
+- final position error
+- planned and actual path length
+- control effort using both raw sample sums and time-weighted L1 integrals
+- separate effort for `/cmd_vel` and `/cmd_vel_controller`
+- angular oscillation metrics: variance, RMS, sign changes
+- mean and max forward speed
+- disturbance magnitude statistics
+
 ## Notes
 
 - `sim_boat_controller.launch.py` is the main launch file for testing.

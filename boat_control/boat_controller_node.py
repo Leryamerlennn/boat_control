@@ -226,7 +226,10 @@ class BoatControllerNode(Node):
         cmd = Twist()
         cmd.linear.x = 0.0
         cmd.angular.z = 0.0
-        self.cmd_pub.publish(cmd)
+        try:
+            self.cmd_pub.publish(cmd)
+        except Exception:
+            pass
 
     def control_loop(self):
         now = self.get_clock().now()

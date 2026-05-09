@@ -13,6 +13,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "launch"), glob("launch/*.launch.py")),
         (os.path.join("share", package_name, "urdf"), glob("urdf/*.urdf")),
+        (os.path.join("share", package_name, "rviz"), glob("rviz/*.rviz")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -27,6 +28,8 @@ setup(
             "waypoint_publisher = boat_control.waypoint_publisher_node:main",
             "disturbance_generator = boat_control.disturbance_generator_node:main",
             "disturbance_applier = boat_control.disturbance_applier_node:main",
+            "metrics_logger = boat_control.metrics_logger_node:main",
+            "metrics_report = boat_control.metrics_report:main",
         ],
     },
 )

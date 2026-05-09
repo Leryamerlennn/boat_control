@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PathJoinSubstitution
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -14,6 +14,9 @@ def generate_launch_description():
     z = LaunchConfiguration("z")
     enable_disturbance = LaunchConfiguration("enable_disturbance")
     use_disturbance_feedforward = LaunchConfiguration("use_disturbance_feedforward")
+    enable_metrics_logging = LaunchConfiguration("enable_metrics_logging")
+    metrics_output_dir = LaunchConfiguration("metrics_output_dir")
+    use_rviz = LaunchConfiguration("use_rviz")
 
     pkg_share = FindPackageShare("boat_control")
     gazebo_launch = FindPackageShare("gazebo_ros")
@@ -132,6 +135,33 @@ def generate_launch_description():
         ],
     )
 
+    metrics_logger = Node(
+        package="boat_control",
+        executable="metrics_logger",
+        name="metrics_logger_node",
+        output="screen",
+        condition=IfCondition(enable_metrics_logging),
+        parameters=[
+            {
+                "output_dir": metrics_output_dir,
+                "use_sim_time": use_sim_time,
+            }
+        ],
+    )
+
+    rviz = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        condition=IfCondition(use_rviz),
+        arguments=[
+            "-d",
+            PathJoinSubstitution([pkg_share, "rviz", "boat_control.rviz"]),
+        ],
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("x", default_value="0.0"),
@@ -139,10 +169,20 @@ def generate_launch_description():
         DeclareLaunchArgument("z", default_value="0.1"),
         DeclareLaunchArgument("enable_disturbance", default_value="false"),
         DeclareLaunchArgument("use_disturbance_feedforward", default_value="false"),
+        DeclareLaunchArgument("enable_metrics_logging", default_value="true"),
+        DeclareLaunchArgument("use_rviz", default_value="true"),
+        DeclareLaunchArgument(
+            "metrics_output_dir",
+            default_value=PathJoinSubstitution(
+                [EnvironmentVariable("HOME"), "ros2_ws", "src", "boat_control", "metrics_runs"]
+            ),
+        ),
         world,
         spawn_boat,
         controller,
         waypoints,
         disturbance_generator,
         disturbance_applier,
+        metrics_logger,
+        rviz,
     ])
