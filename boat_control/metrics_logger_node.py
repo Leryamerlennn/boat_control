@@ -31,7 +31,7 @@ class MetricsLoggerNode(Node):
         base_dir = Path(self.get_parameter("output_dir").value).expanduser().resolve()
         run_name = str(self.get_parameter("run_name").value).strip()
         if not run_name:
-            run_name = datetime.now().strftime("run_metrics")
+            run_name = datetime.now().strftime("run_%Y%m%d_%H%M%S")
         self.run_dir = base_dir / run_name
         self.run_dir.mkdir(parents=True, exist_ok=True)
 

@@ -1,0 +1,22 @@
+{
+  "run_dir": "/home/valeria/ros2_ws/src/boat_control/metrics_runs/disturbance_with_ff",
+  "odom_sample_count": 845,
+  "cmd_sample_count": 852,
+  "disturbance_sample_count": 852,
+  "waypoint_count": 8,
+  "mission_duration_sec": 42.199999999999996,
+  "planned_path_length": 18.30056307974577,
+  "actual_path_length": 17.800190450743663,
+  "mean_expected_error": 1.0508616659590984,
+  "max_expected_error": 2.2464605346008555,
+  "mean_actual_error": 0.13476396326245613,
+  "max_actual_error": 0.3938986572936898,
+  "mean_difference_expected_vs_actual_error": 0.9160977026966411,
+  "signed_mean_difference_expected_minus_actual_error": 0.9160977026966411,
+  "mean_cmd_vel_linear_x": 0.41496067897452327,
+  "max_cmd_vel_linear_x": 1.2048004733727005,
+  "mean_abs_cmd_vel_angular_z": 0.26831878257641495,
+  "max_abs_cmd_vel_angular_z": 1.3938306371541775,
+  "mean_disturbance_magnitude": 0.21287936419143538,
+  "max_disturbance_magnitude": 0.30596841153330545
+}

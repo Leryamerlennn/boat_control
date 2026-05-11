@@ -193,41 +193,78 @@ You can choose another directory:
 ros2 launch boat_control sim_boat_controller.launch.py metrics_output_dir:=/tmp/my_metrics
 ```
 
-The logger creates a timestamped run directory such as:
+You can also choose the run folder name:
+
+```bash
+ros2 launch boat_control sim_boat_controller.launch.py metrics_run_name:=demo_run
+```
+
+If `metrics_run_name` is not set, the logger creates a timestamped run directory such as:
 
 ```text
-~/ros2_ws/src/boat_control/metrics_runs/run_metrics
+~/ros2_ws/src/boat_control/metrics_runs/run_20260511_153000
 ```
 
 ### 3. Generate metrics and graphics from CSV
 
 ```bash
-ros2 run boat_control metrics_report ~/ros2_ws/src/boat_control/metrics_runs/run_metrics
+ros2 run boat_control metrics_report ~/ros2_ws/src/boat_control/metrics_runs/demo_run
 ```
 
 This creates:
 - `metrics_summary.json`
-- `metrics_overview.png`
-- `angular_oscillation.png`
+- `trajectory_expected_vs_actual.png`
+- `cmd_vel_linear_x_over_time.png`
+- `cmd_vel_angular_z_over_time.png`
+- `disturbance_over_time.png`
+- `expected_vs_actual_error.png`
+- `error_timeseries.csv`
 
 inside:
 
 ```text
-~/ros2_ws/src/boat_control/metrics_runs/run_metrics/analysis
+~/ros2_ws/src/boat_control/metrics_runs/demo_run/analysis
 ```
 
 ### Computed metrics
 
 The analyzer currently reports:
-- trajectory RMSE to the planned path polyline
-- trajectory MAE and max path error
-- final position error
-- planned and actual path length
-- control effort using both raw sample sums and time-weighted L1 integrals
-- separate effort for `/cmd_vel` and `/cmd_vel_controller`
-- angular oscillation metrics: variance, RMS, sign changes
-- mean and max forward speed
-- disturbance magnitude statistics
+- planned trajectory vs expected trajectory vs actual trajectory
+- `cmd_vel.linear.x` over time
+- `cmd_vel.angular.z` over time
+- disturbance / flow over time
+- expected error vs actual error
+- mean difference between expected error and actual error
+- additional summary values such as mission duration, path lengths, and disturbance magnitude statistics
+
+### Example full workflow
+
+1. Build and source:
+
+```bash
+cd ~/ros2_ws
+colcon build --packages-select boat_control
+source /opt/ros/$ROS_DISTRO/setup.bash
+source ~/ros2_ws/install/setup.bash
+```
+
+2. Start a run with logging enabled:
+
+```bash
+ros2 launch boat_control sim_boat_controller.launch.py enable_metrics_logging:=true metrics_run_name:=demo_run
+```
+
+3. Stop the simulation after the run and generate the analysis:
+
+```bash
+ros2 run boat_control metrics_report ~/ros2_ws/src/boat_control/metrics_runs/demo_run
+```
+
+4. Open the results from:
+
+```text
+~/ros2_ws/src/boat_control/metrics_runs/demo_run/analysis
+```
 
 ## Notes
 

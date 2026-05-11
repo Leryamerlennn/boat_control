@@ -16,6 +16,7 @@ def generate_launch_description():
     use_disturbance_feedforward = LaunchConfiguration("use_disturbance_feedforward")
     enable_metrics_logging = LaunchConfiguration("enable_metrics_logging")
     metrics_output_dir = LaunchConfiguration("metrics_output_dir")
+    metrics_run_name = LaunchConfiguration("metrics_run_name")
     use_rviz = LaunchConfiguration("use_rviz")
 
     pkg_share = FindPackageShare("boat_control")
@@ -144,6 +145,7 @@ def generate_launch_description():
         parameters=[
             {
                 "output_dir": metrics_output_dir,
+                "run_name": metrics_run_name,
                 "use_sim_time": use_sim_time,
             }
         ],
@@ -171,6 +173,7 @@ def generate_launch_description():
         DeclareLaunchArgument("use_disturbance_feedforward", default_value="false"),
         DeclareLaunchArgument("enable_metrics_logging", default_value="true"),
         DeclareLaunchArgument("use_rviz", default_value="true"),
+        DeclareLaunchArgument("metrics_run_name", default_value=""),
         DeclareLaunchArgument(
             "metrics_output_dir",
             default_value=PathJoinSubstitution(
